@@ -120,6 +120,34 @@ void applyRoverBoatPitchRollThrottleController(navigationFSMStateFlags_t navStat
              */
             rcCommand[YAW] = 0;
             rcCommand[THROTTLE] = feature(FEATURE_REVERSIBLE_MOTORS) ? reversibleMotorsConfig()->neutral : motorConfig()->mincommand;
+        } else if (FLIGHT_MODE(NAV_POSHOLD_MODE) && STATE(BOAT)){
+            if (isYawAdjustmentValid) {
+                rcCommand[YAW] = posControl.rcAdjustment[YAW];
+            }
+            // // TODO Beep every second to indicate poshold in progress
+            float posErrorX = posControl.desiredState.pos.x - navGetCurrentActualPositionAndVelocity()->pos.x;
+            float posErrorY = posControl.desiredState.pos.y - navGetCurrentActualPositionAndVelocity()->pos.y;
+            float distanceToActualTarget = sqrtf(sq(posErrorX) + sq(posErrorY));
+            float distanceToActualTarget2 = calculateDistanceToDestination(&posControl.desiredState.pos);
+            // Manual throttle increase
+            uint16_t correctedThrottleValue = constrain(navConfig()->fw.cruise_throttle, navConfig()->fw.min_throttle, navConfig()->fw.max_throttle);
+
+            if (navConfig()->fw.allow_manual_thr_increase) {
+                if (rcCommand[THROTTLE] < PWM_RANGE_MIN + (PWM_RANGE_MAX - PWM_RANGE_MIN) * 0.95)
+                    // I might need to change that with:
+                    // correctedThrottleValue += MAX(0, rxGetChannelValue(THROTTLE) - navConfig()->fw.cruise_throttle);
+                    // 
+                    correctedThrottleValue += MAX(0, rcCommand[THROTTLE] - navConfig()->fw.cruise_throttle);
+                else
+                    correctedThrottleValue = motorConfig()->maxthrottle;
+            }
+
+            if (distanceToActualTarget >= (navConfig()->fw.loiter_radius)){    
+                // rcCommand[THROTTLE] = navConfig()->fw.cruise_throttle;
+                rcCommand[THROTTLE] = correctedThrottleValue;
+            } else {
+                rcCommand[THROTTLE] = feature(FEATURE_REVERSIBLE_MOTORS) ? reversibleMotorsConfig()->neutral : motorConfig()->mincommand;
+            }
         } else {
             if (isYawAdjustmentValid) {
                 rcCommand[YAW] = posControl.rcAdjustment[YAW];

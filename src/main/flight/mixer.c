@@ -691,6 +691,11 @@ motorStatus_e getMotorStatus(void)
             return MOTOR_STOPPED_USER;
 
         } else if (!failsafeIsActive()) {
+            // This enables the motor to spin even when the throttle stick is a the lowest position.
+            if (STATE(BOAT) && FLIGHT_MODE(NAV_POSHOLD_MODE)){
+                return MOTOR_RUNNING;
+            }
+
             // If user is holding stick low, we are not in failsafe and either on a plane or on a quad with inactive
             // airmode - we need to check if we are allowing navigation to override MOTOR_STOP
 

@@ -133,7 +133,7 @@ void applyRoverBoatPitchRollThrottleController(navigationFSMStateFlags_t navStat
             uint16_t correctedThrottleValue = constrain(navConfig()->fw.cruise_throttle, navConfig()->fw.min_throttle, navConfig()->fw.max_throttle);
 
             if (navConfig()->fw.allow_manual_thr_increase) {
-                if (rcCommand[THROTTLE] < PWM_RANGE_MIN + (PWM_RANGE_MAX - PWM_RANGE_MIN) * 0.95)
+                if (rcCommand[THROTTLE] < navConfig()->fw.min_throttle + (navConfig()->fw.max_throttle - navConfig()->fw.min_throttle) * 0.95)
                     // I might need to change that with:
                     // correctedThrottleValue += MAX(0, rxGetChannelValue(THROTTLE) - navConfig()->fw.cruise_throttle);
                     // 

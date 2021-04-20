@@ -967,11 +967,11 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_INITIALIZE(n
     const bool terrainFollowingToggled = (posControl.flags.isTerrainFollowEnabled != navTerrainFollowingRequested());
 
     resetGCSFlags();
-
+    // If the previous state we switched from didn't include NAV_CTL_POS then reset Position Controller
     if ((prevFlags & NAV_CTL_POS) == 0) {
         resetPositionController();
     }
-
+    // If the previous state we switched from didn't include NAV_CTL_ALT then reset & setup Altitude Controller
     if ((prevFlags & NAV_CTL_ALT) == 0 || terrainFollowingToggled) {
         resetAltitudeController(navTerrainFollowingRequested());
         setupAltitudeController();
@@ -979,12 +979,14 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_INITIALIZE(n
 
     if (((prevFlags & NAV_CTL_ALT) == 0) || ((prevFlags & NAV_AUTO_RTH) != 0) || ((prevFlags & NAV_AUTO_WP) != 0) || terrainFollowingToggled) {
         setDesiredPosition(&navGetCurrentActualPositionAndVelocity()->pos, posControl.actualState.yaw, NAV_POS_UPDATE_Z);  // This will reset surface offset
+        // Debug this to check if statement gets executed
     }
 
     if ((previousState != NAV_STATE_RTH_HOVER_PRIOR_TO_LANDING) && (previousState != NAV_STATE_RTH_HOVER_ABOVE_HOME) && (previousState != NAV_STATE_RTH_LANDING)) {
         fpVector3_t targetHoldPos;
         calculateInitialHoldPosition(&targetHoldPos);
         setDesiredPosition(&targetHoldPos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
+        // Also Debug this to check if statement gets executed
     }
 
     return NAV_FSM_EVENT_SUCCESS;
@@ -2455,7 +2457,7 @@ uint32_t getTotalTravelDistance(void)
  *-----------------------------------------------------------*/
 void calculateInitialHoldPosition(fpVector3_t * pos)
 {
-    if (STATE(FIXED_WING_LEGACY)) { // FIXED_WING_LEGACY
+    if (STATE(FIXED_WING_LEGACY)) { // FIXED_WING_LEGACY Also applies to Rover and Boats
         calculateFixedWingInitialHoldPosition(pos);
     }
     else {

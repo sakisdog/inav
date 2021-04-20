@@ -124,10 +124,6 @@ void applyRoverBoatPitchRollThrottleController(navigationFSMStateFlags_t navStat
             if (isYawAdjustmentValid) {
                 rcCommand[YAW] = posControl.rcAdjustment[YAW];
             }
-            // // TODO Beep every second to indicate poshold in progress
-            // float posErrorX = posControl.desiredState.pos.x - navGetCurrentActualPositionAndVelocity()->pos.x;
-            // float posErrorY = posControl.desiredState.pos.y - navGetCurrentActualPositionAndVelocity()->pos.y;
-            // float distanceToActualTarget = sqrtf(sq(posErrorX) + sq(posErrorY));
             float distanceToActualTarget = calculateDistanceToDestination(&posControl.desiredState.pos);
             // Manual throttle increase
             uint16_t correctedThrottleValue = constrain(navConfig()->fw.cruise_throttle, navConfig()->fw.min_throttle, navConfig()->fw.max_throttle);

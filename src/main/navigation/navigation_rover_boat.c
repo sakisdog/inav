@@ -121,9 +121,7 @@ void applyRoverBoatPitchRollThrottleController(navigationFSMStateFlags_t navStat
             rcCommand[YAW] = 0;
             rcCommand[THROTTLE] = feature(FEATURE_REVERSIBLE_MOTORS) ? reversibleMotorsConfig()->neutral : motorConfig()->mincommand;
         } else if (FLIGHT_MODE(NAV_POSHOLD_MODE) && STATE(BOAT)){
-            if (isYawAdjustmentValid) {
-                rcCommand[YAW] = posControl.rcAdjustment[YAW];
-            }
+            
             float distanceToActualTarget = calculateDistanceToDestination(&posControl.desiredState.pos);
             // Manual throttle increase
             uint16_t correctedThrottleValue = constrain(navConfig()->fw.cruise_throttle, navConfig()->fw.min_throttle, navConfig()->fw.max_throttle);
@@ -141,8 +139,12 @@ void applyRoverBoatPitchRollThrottleController(navigationFSMStateFlags_t navStat
             if (distanceToActualTarget >= (navConfig()->fw.loiter_radius)){    
                 // rcCommand[THROTTLE] = navConfig()->fw.cruise_throttle;
                 rcCommand[THROTTLE] = correctedThrottleValue;
+                if (isYawAdjustmentValid) {
+                    rcCommand[YAW] = posControl.rcAdjustment[YAW];
+                }
             } else {
                 rcCommand[THROTTLE] = feature(FEATURE_REVERSIBLE_MOTORS) ? reversibleMotorsConfig()->neutral : motorConfig()->mincommand;
+                rcCommand[YAW] = 0;
             }
         } else {
             if (isYawAdjustmentValid) {

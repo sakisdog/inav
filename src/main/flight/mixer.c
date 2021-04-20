@@ -692,6 +692,7 @@ motorStatus_e getMotorStatus(void)
 
         } else if (!failsafeIsActive()) {
             // This enables the motor to spin even when the throttle stick is a the lowest position.
+            // FIXME: This might not needed after the NOMS configuration but we'll chekc that later
             if (STATE(BOAT) && FLIGHT_MODE(NAV_POSHOLD_MODE)){
                 return MOTOR_RUNNING;
             }

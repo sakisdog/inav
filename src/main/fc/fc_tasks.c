@@ -47,6 +47,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/wind_estimator.h"
+#include "flight/secondary_imu.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
 #include "flight/dynamic_lpf.h"
@@ -300,12 +301,16 @@ void fcTasksInit(void)
 {
     schedulerInit();
 
-    rescheduleTask(TASK_GYROPID, getLooptime());
-    setTaskEnabled(TASK_GYROPID, true);
+    rescheduleTask(TASK_PID, getLooptime());
+    setTaskEnabled(TASK_PID, true);
+
+    rescheduleTask(TASK_GYRO, getGyroLooptime());
+    setTaskEnabled(TASK_GYRO, true);
+
     setTaskEnabled(TASK_AUX, true);
 
     setTaskEnabled(TASK_SERIAL, true);
-#ifdef BEEPER
+#if defined(BEEPER) || defined(USE_DSHOT)
     setTaskEnabled(TASK_BEEPER, true);
 #endif
 #ifdef USE_LIGHTS
@@ -375,6 +380,9 @@ void fcTasksInit(void)
 #if defined(USE_SMARTPORT_MASTER)
     setTaskEnabled(TASK_SMARTPORT_MASTER, true);
 #endif
+#ifdef USE_SECONDARY_IMU
+    setTaskEnabled(TASK_SECONDARY_IMU, secondaryImuConfig()->hardwareType != SECONDARY_IMU_NONE && secondaryImuState.active);
+#endif
 }
 
 cfTask_t cfTasks[TASK_COUNT] = {
@@ -384,10 +392,16 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .desiredPeriod = TASK_PERIOD_HZ(10),              // run every 100 ms, 10Hz
         .staticPriority = TASK_PRIORITY_HIGH,
     },
-    [TASK_GYROPID] = {
-        .taskName = "GYRO/PID",
+    [TASK_PID] = {
+        .taskName = "PID",
         .taskFunc = taskMainPidLoop,
         .desiredPeriod = TASK_PERIOD_US(1000),
+        .staticPriority = TASK_PRIORITY_REALTIME,
+    },
+    [TASK_GYRO] = {
+        .taskName = "GYRO",
+        .taskFunc = taskGyro,
+        .desiredPeriod = TASK_PERIOD_US(TASK_GYRO_LOOPTIME),
         .staticPriority = TASK_PRIORITY_REALTIME,
     },
     [TASK_SERIAL] = {
@@ -397,7 +411,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_LOW,
     },
 
-#ifdef BEEPER
+#if defined(BEEPER) || defined(USE_DSHOT)
     [TASK_BEEPER] = {
         .taskName = "BEEPER",
         .taskFunc = beeperUpdate,
@@ -593,6 +607,14 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_PROGRAMMING_FRAMEWORK] = {
         .taskName = "PROGRAMMING",
         .taskFunc = programmingFrameworkUpdateTask,
+        .desiredPeriod = TASK_PERIOD_HZ(10),          // 10Hz @100msec
+        .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+#ifdef USE_SECONDARY_IMU
+    [TASK_SECONDARY_IMU] = {
+        .taskName = "IMU2",
+        .taskFunc = taskSecondaryImu,
         .desiredPeriod = TASK_PERIOD_HZ(10),          // 10Hz @100msec
         .staticPriority = TASK_PRIORITY_IDLE,
     },

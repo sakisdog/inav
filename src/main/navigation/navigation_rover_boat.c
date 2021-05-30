@@ -148,8 +148,17 @@ void applyRoverBoatPitchRollThrottleController(navigationFSMStateFlags_t navStat
             if (isYawAdjustmentValid) {
                 rcCommand[YAW] = posControl.rcAdjustment[YAW];
             }
+            // Manual throttle increase
+            uint16_t correctedThrottleValue = constrain(navConfig()->fw.cruise_throttle, navConfig()->fw.min_throttle, navConfig()->fw.max_throttle);
 
-            rcCommand[THROTTLE] = constrain(navConfig()->fw.cruise_throttle, motorConfig()->mincommand, motorConfig()->maxthrottle);
+            if (navConfig()->fw.allow_manual_thr_increase && rxGetChannelValue(THROTTLE) > navConfig()->fw.cruise_throttle) {
+                if (rcCommand[THROTTLE] < navConfig()->fw.min_throttle + (navConfig()->fw.max_throttle - navConfig()->fw.min_throttle) * 0.95)
+                    correctedThrottleValue += MAX(0, rxGetChannelValue(THROTTLE) - navConfig()->fw.cruise_throttle);
+                    //correctedThrottleValue += MAX(0, rcCommand[THROTTLE] - navConfig()->fw.cruise_throttle);
+                else
+                    correctedThrottleValue = motorConfig()->maxthrottle;
+            }
+            rcCommand[THROTTLE] = constrain(correctedThrottleValue, motorConfig()->mincommand, motorConfig()->maxthrottle);
         }
     }
 }
